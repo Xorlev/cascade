@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package slogd;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_package = "slog.proto";
+option java_multiple_files = true;
+option java_generate_equals_and_hash = true;
+
+option go_package = "proto";
+
+
+message LogEntry {
+    uint64 offset = 1;
+    google.protobuf.Timestamp timestamp = 2;
+    map<string, string> annotations = 5;
+
+    oneof entry {
+        google.protobuf.Any protobuf = 3;
+        bytes raw_bytes = 4;
+    }
+}
+
+message AppendRequest {
+    string topic = 1;
+    repeated LogEntry log_entry = 2;
+}
+
+message AppendResponse {
+    repeated uint64 offset = 1;
+}
+
+message StreamLogsRequest {
+    string topic = 1;
+
+    enum Position {
+        UNSPECIFIED = 0;
+        EARLIEST = 1;
+        LATEST = 2;
+    }
+
+    oneof start_at {
+        // must be >= 0
+        uint64 offset = 2;
+
+        // or by timestamp
+        google.protobuf.Timestamp timestamp = 3;
+
+        // or a "special position", e.g. earliest/latest
+        Position position = 4;
+    }
+
+    // number of messages to retrieve in a single request
+    // ignored during stream ops
+    int32 max_messages = 6;
+}
+
+message StreamLogsResponse {
+    repeated LogEntry logs = 2;
+}
+
+message ListTopicsRequest {}
+message ListTopicsResponse {}
+
+message CreateTopicRequest {
+    string topic = 1;
+}
+message CreateTopicResponse {}
+
+message DeleteTopicRequest {
+    string topic = 1;
+}
+message DeleteTopicResponse {}
+
+message ModifyTopicRequest {
+    string topic = 1;
+}
+message ModifyTopicResponse {}

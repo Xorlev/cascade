@@ -1,0 +1,9 @@
+[workspace]
+members = [
+    "service",
+    "shared",
+    "storage",
+]
+
+[profile.release]
+panic = "abort"
