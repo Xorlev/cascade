@@ -1,9 +1,10 @@
 extern crate env_logger;
 extern crate futures;
 extern crate grpcio;
-extern crate shared;
+extern crate slogd_shared;
 extern crate protobuf;
 #[macro_use] extern crate log;
+extern crate tokio;
 
 use std::sync::Arc;
 use std::io::Read;
@@ -13,36 +14,45 @@ use std::{io, thread};
 use futures::*;
 use futures::sync::oneshot;
 use grpcio::*;
-use shared::protos::data::*;
-use shared::protos::rpc_grpc::*;
-use shared::protos::rpc_grpc::{self, StructuredLogService};
+use slogd_shared::protos::data::*;
+use slogd_shared::protos::rpc_grpc::*;
+use slogd_shared::protos::rpc_grpc::{self, StructuredLog};
+use tokio::prelude::*;
 
 
 #[derive(Clone)]
-struct StructuredLog {}
+struct StructuredLogService {}
 
-impl StructuredLogService for StructuredLog {
+impl StructuredLog for StructuredLogService {
     fn append_logs(&self, ctx: RpcContext, req: AppendRequest, sink: UnarySink<AppendResponse>) {
         unimplemented!()
     }
 
-    fn stream_logs(&self, ctx: RpcContext, req: StreamLogsRequest, sink: ServerStreamingSink<StreamLogsResponse>) {
+    fn get_logs(&self, ctx: RpcContext, req: GetLogsRequest, sink: UnarySink<GetLogsResponse>) {
+        unimplemented!()
+    }
+
+    fn stream_logs(&self, ctx: RpcContext, req: GetLogsRequest, sink: ServerStreamingSink<GetLogsResponse>) {
         println!("{:?}", req);
 
         let logs = vec![
-            (StreamLogsResponse::new(), WriteFlags::default())
+            (GetLogsResponse::new(), WriteFlags::default())
         ];
 
         sink.send_all(stream::iter_ok::<_, Error>(logs));
+    }
+
+    fn list_topics(&self, ctx: RpcContext, req: ListTopicsRequest, sink: UnarySink<ListTopicsResponse>) {
+        unimplemented!()
     }
 }
 
 fn main() {
     env_logger::init();
 
-    let instance = StructuredLog{};
+    let instance = StructuredLogService{};
     let env = Arc::new(Environment::new(2));
-    let service = rpc_grpc::create_structured_log_service(instance);
+    let service = rpc_grpc::create_structured_log(instance);
     let mut server = ServerBuilder::new(env)
         .register_service(service)
         .bind("127.0.0.1", 50051)

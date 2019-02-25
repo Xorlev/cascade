@@ -1,5 +1,5 @@
 [package]
-name = "shared"
+name = "slogd-storage"
 version = "0.1.0"
 authors = ["Michael Rose <elementation@gmail.com>"]
 
@@ -11,8 +11,5 @@ failure = "0.1"
 failure_derive = "0.1"
 futures = "0.1"
 grpcio = "0.3"
+slogd-shared = { path = "../slogd-shared" }
 protobuf = "2.0"
-
-[build-dependencies]
-protoc-grpcio = "0.2"
-protoc-rust = "2.0"

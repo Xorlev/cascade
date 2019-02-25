@@ -1,8 +1,9 @@
 [workspace]
 members = [
-    "service",
-    "shared",
-    "storage",
+    "slogd-client",
+    "slogd-service",
+    "slogd-shared",
+    "slogd-storage",
 ]
 
 [profile.release]

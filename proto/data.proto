@@ -23,16 +23,21 @@ message LogEntry {
     }
 }
 
+message Topic {
+    // Name of the topic.
+    string name = 1;
+}
+
 message AppendRequest {
     string topic = 1;
-    repeated LogEntry log_entry = 2;
+    repeated LogEntry logs = 2;
 }
 
 message AppendResponse {
-    repeated uint64 offset = 1;
+    repeated uint64 offsets = 1;
 }
 
-message StreamLogsRequest {
+message GetLogsRequest {
     string topic = 1;
 
     enum Position {
@@ -57,12 +62,14 @@ message StreamLogsRequest {
     int32 max_messages = 6;
 }
 
-message StreamLogsResponse {
+message GetLogsResponse {
     repeated LogEntry logs = 2;
 }
 
 message ListTopicsRequest {}
-message ListTopicsResponse {}
+message ListTopicsResponse {
+    repeated Topic topic = 1;
+}
 
 message CreateTopicRequest {
     string topic = 1;

@@ -1,5 +1,5 @@
 [package]
-name = "storage"
+name = "slogd-service"
 version = "0.1.0"
 authors = ["Michael Rose <elementation@gmail.com>"]
 
@@ -11,6 +11,9 @@ failure = "0.1"
 failure_derive = "0.1"
 futures = "0.1"
 grpcio = "0.3"
+log = "0.3"
+slogd-shared = { path = "../slogd-shared" }
+tokio = "0.1"
 protobuf = "2.0"
 
 [build-dependencies]
