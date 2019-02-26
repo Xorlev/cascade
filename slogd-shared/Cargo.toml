@@ -10,7 +10,7 @@ env_logger = "0.5"
 failure = "0.1"
 failure_derive = "0.1"
 futures = "0.1"
-grpcio = "0.3"
+grpcio = "0.4"
 protobuf = "2.0"
 
 [build-dependencies]
