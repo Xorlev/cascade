@@ -10,7 +10,7 @@ use tokio::sync::mpsc;
 use tonic::transport::Server;
 use tower_service::Service;
 
-use tonic::{Request, Response, Status};
+use tonic::{Request, Response, Status, Streaming};
 
 mod storage;
 pub mod slogd_proto {
@@ -30,13 +30,21 @@ struct StructuredLogService {}
 
 #[tonic::async_trait]
 impl server::StructuredLog for StructuredLogService {
-    type StreamLogsStream = mpsc::Receiver<Result<LogEntry, Status>>;
+    type AppendLogsStreamStream = mpsc::Receiver<Result<AppendResponse, Status>>;
+    type GetLogsStreamStream = mpsc::Receiver<Result<LogEntry, Status>>;
 
     async fn append_logs(
         &self,
         request: Request<AppendRequest>,
     ) -> Result<Response<AppendResponse>, Status> {
         Err(Status::unimplemented("Not yet implemented"))
+    }
+
+    async fn append_logs_stream(
+        &self,
+        request: Request<Streaming<AppendRequest>>,
+    ) -> Result<Response<Self::AppendLogsStreamStream>, Status> {
+        Err(tonic::Status::unimplemented("Not yet implemented"))
     }
     async fn get_logs(
         &self,
@@ -46,10 +54,10 @@ impl server::StructuredLog for StructuredLogService {
             logs: vec![]
         }))
     }
-    async fn stream_logs(
+    async fn get_logs_stream(
         &self,
         request: Request<GetLogsRequest>,
-    ) -> Result<Response<Self::StreamLogsStream>, Status> {
+    ) -> Result<Response<Self::GetLogsStreamStream>, Status> {
         Err(Status::unimplemented("Not yet implemented"))
     }
     async fn list_topics(

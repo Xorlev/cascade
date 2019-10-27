@@ -18,7 +18,7 @@ service StructuredLog {
             body: '*'
         };
     };
-    rpc AppendLogsStream(AppendRequest) returns (stream AppendResponse) {
+    rpc AppendLogsStream(stream AppendRequest) returns (stream AppendResponse) {
         option (google.api.http) = {
             post: '/topic/{topic}/logs'
             body: '*'
