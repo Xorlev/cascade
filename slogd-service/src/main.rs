@@ -12,13 +12,14 @@ use tower_service::Service;
 
 use tonic::{Request, Response, Status};
 
+mod storage;
 pub mod slogd_proto {
     tonic::include_proto!("slogd");
 }
 
 use slogd_proto::{
     server, AppendRequest, AppendResponse, GetLogsRequest, GetLogsResponse, ListTopicsRequest,
-    ListTopicsResponse,
+    ListTopicsResponse, LogEntry
 };
 
 use futures::*;
@@ -29,7 +30,7 @@ struct StructuredLogService {}
 
 #[tonic::async_trait]
 impl server::StructuredLog for StructuredLogService {
-    type StreamLogsStream = mpsc::Receiver<Result<GetLogsResponse, Status>>;
+    type StreamLogsStream = mpsc::Receiver<Result<LogEntry, Status>>;
 
     async fn append_logs(
         &self,

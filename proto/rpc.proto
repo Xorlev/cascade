@@ -23,7 +23,7 @@ service StructuredLog {
             get: '/topic/{topic}/logs'
         };
     };
-    rpc StreamLogs(GetLogsRequest) returns (stream GetLogsResponse) {
+    rpc StreamLogs(GetLogsRequest) returns (stream LogEntry) {
         option (google.api.http) = {
             get: '/topic/{topic}/logstream'
         };
