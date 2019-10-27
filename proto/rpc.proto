@@ -18,17 +18,22 @@ service StructuredLog {
             body: '*'
         };
     };
+    rpc AppendLogsStream(AppendRequest) returns (stream AppendResponse) {
+        option (google.api.http) = {
+            post: '/topic/{topic}/logs'
+            body: '*'
+        };
+    };
     rpc GetLogs(GetLogsRequest) returns (GetLogsResponse) {
         option (google.api.http) = {
             get: '/topic/{topic}/logs'
         };
     };
-    rpc StreamLogs(GetLogsRequest) returns (stream LogEntry) {
+    rpc GetLogsStream(GetLogsRequest) returns (stream LogEntry) {
         option (google.api.http) = {
             get: '/topic/{topic}/logstream'
         };
     };
-
     rpc ListTopics(ListTopicsRequest) returns (ListTopicsResponse) {
         option (google.api.http) = {
             get: '/topics'
