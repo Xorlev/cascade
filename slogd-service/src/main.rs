@@ -1,73 +1,81 @@
-extern crate env_logger;
-extern crate futures;
-extern crate grpcio;
-extern crate slogd_shared;
-extern crate protobuf;
-#[macro_use] extern crate log;
-extern crate tokio;
-
-use std::sync::Arc;
+use futures::{Stream, StreamExt};
+use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
 use std::io::Read;
+use std::pin::Pin;
+use std::sync::Arc;
 use std::time::Instant;
 use std::{io, thread};
+use tokio::sync::mpsc;
+use tonic::transport::Server;
+use tower_service::Service;
+
+use tonic::{Request, Response, Status};
+
+pub mod slogd_proto {
+    tonic::include_proto!("slogd");
+}
+
+use slogd_proto::{
+    server, AppendRequest, AppendResponse, GetLogsRequest, GetLogsResponse, ListTopicsRequest,
+    ListTopicsResponse,
+};
 
 use futures::*;
-use futures::sync::oneshot;
-use grpcio::*;
-use slogd_shared::protos::data::*;
-use slogd_shared::protos::rpc_grpc::*;
-use slogd_shared::protos::rpc_grpc::{self, StructuredLog};
 use tokio::prelude::*;
-
 
 #[derive(Clone)]
 struct StructuredLogService {}
 
-impl StructuredLog for StructuredLogService {
-    fn append_logs(&self, ctx: RpcContext, req: AppendRequest, sink: UnarySink<AppendResponse>) {
-        unimplemented!()
+#[tonic::async_trait]
+impl server::StructuredLog for StructuredLogService {
+    type StreamLogsStream = mpsc::Receiver<Result<GetLogsResponse, Status>>;
+
+    async fn append_logs(
+        &self,
+        request: Request<AppendRequest>,
+    ) -> Result<Response<AppendResponse>, Status> {
+        Err(Status::unimplemented("Not yet implemented"))
     }
-
-    fn get_logs(&self, ctx: RpcContext, req: GetLogsRequest, sink: UnarySink<GetLogsResponse>) {
-        unimplemented!()
+    async fn get_logs(
+        &self,
+        request: Request<GetLogsRequest>,
+    ) -> Result<Response<GetLogsResponse>, Status> {
+        Ok(Response::new(GetLogsResponse {
+            logs: vec![]
+        }))
     }
-
-    fn stream_logs(&self, ctx: RpcContext, req: GetLogsRequest, sink: ServerStreamingSink<GetLogsResponse>) {
-        println!("{:?}", req);
-
-        let logs = vec![
-            (GetLogsResponse::new(), WriteFlags::default())
-        ];
-
-        sink.send_all(stream::iter_ok::<_, Error>(logs));
+    async fn stream_logs(
+        &self,
+        request: Request<GetLogsRequest>,
+    ) -> Result<Response<Self::StreamLogsStream>, Status> {
+        Err(Status::unimplemented("Not yet implemented"))
     }
-
-    fn list_topics(&self, ctx: RpcContext, req: ListTopicsRequest, sink: UnarySink<ListTopicsResponse>) {
-        unimplemented!()
+    async fn list_topics(
+        &self,
+        request: Request<ListTopicsRequest>,
+    ) -> Result<Response<ListTopicsResponse>, Status> {
+        Err(Status::unimplemented("Not yet implemented"))
     }
 }
 
-fn main() {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
 
-    let instance = StructuredLogService{};
-    let env = Arc::new(Environment::new(2));
-    let service = rpc_grpc::create_structured_log(instance);
-    let mut server = ServerBuilder::new(env)
-        .register_service(service)
-        .bind("127.0.0.1", 50051)
-        .build()
-        .unwrap();
-    server.start();
-    for &(ref host, port) in server.bind_addrs() {
-        println!("listening on {}:{}", host, port);
-    }
-    let (tx, rx) = oneshot::channel();
-    thread::spawn(move || {
-        println!("Press ENTER to exit...");
-        let _ = io::stdin().read(&mut [0]).unwrap();
-        tx.send(())
-    });
-    let _ = rx.wait();
-    let _ = server.shutdown().wait();
+    let addr = "127.0.0.1:10000".parse().unwrap();
+
+    println!("Listening on: {}", addr);
+
+    let structured_log_service = StructuredLogService {};
+    let svc = server::StructuredLogServer::new(structured_log_service);
+
+    let mut builder = Server::builder();
+    builder.interceptor_fn(|svc, req| {
+            println!("request={:?}", req);
+            svc.call(req)
+        });
+    builder.serve(addr, svc).await?;
+
+    Ok(())
 }

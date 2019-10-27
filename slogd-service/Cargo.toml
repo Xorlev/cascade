@@ -2,20 +2,26 @@
 name = "slogd-service"
 version = "0.1.0"
 authors = ["Michael Rose <elementation@gmail.com>"]
+edition = "2018"
 
 [dependencies]
+async-stream = "0.1.2"
+bytes = "0.4"
 chrono = { version = "0.4" }
 clap = "~2.31"
 env_logger = "0.5"
 failure = "0.1"
 failure_derive = "0.1"
-futures = "0.1"
-grpcio = "0.4"
+futures-preview = { version = "=0.3.0-alpha.19", default-features = false, features = ["alloc"]}
+http = "0.1"
 log = "0.3"
-slogd-shared = { path = "../slogd-shared" }
-tokio = "0.1"
-protobuf = "2.0"
+prost = "0.5"
+prost-types = "0.5"
+#slogd-shared = { path = "../slogd-shared" }
+tokio = "=0.2.0-alpha.6"
+tower = "=0.3.0-alpha.2"
+tower-service = "0.3.0-alpha.2"
+tonic = "0.1.0-alpha.4"
 
 [build-dependencies]
-protoc-grpcio = "0.2"
-protoc-rust = "2.0"
+tonic-build = "0.1.0-alpha.4"
