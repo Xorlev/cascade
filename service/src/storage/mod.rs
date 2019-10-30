@@ -76,7 +76,18 @@ impl Log for Topic {
 }
 
 struct IndexQuery;
-struct IndexResponse;
+
+enum IndexResponse {
+    NotFound,
+    FilePosition(usize),
+
+    // These types require additional index lookups to continue resolving.
+    // TODO: This can probably be implemented as a looping state machine which always seeks to find
+    //  one of the terminal states (NotFound or FilePosition). You can imagine multiple index types
+    //  such as timestamp or indexed annotation returning Offset and needing the second-level
+    //  resolution to a file position.
+    Offset(Offset),
+}
 
 /// An index could index over the set of annotations available on each LogEntry,
 /// (or a specific set of annotations) and provide a mapping from annotation to a list of
