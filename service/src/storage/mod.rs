@@ -3,6 +3,9 @@ use failure::Fail;
 use futures::{Future, Stream};
 
 use crate::slogd_proto::LogEntry;
+use std::collections::HashMap;
+
+mod segment;
 
 #[derive(Debug, Fail)]
 pub enum StorageError {
@@ -12,10 +15,30 @@ pub enum StorageError {
 
 type Offset = u64;
 type StorageResult<T> = Result<T, StorageError>;
+type TopicName = String;
+
+
+#[async_trait]
+trait Log {
+    async fn append(entries: Vec<LogEntry>) -> StorageResult<Offset>;
+    async fn read(query: LogQuery) -> Box<dyn Stream<Item = StorageResult<LogEntry>>>;
+    fn close();
+}
 
 /// LogManager maintains topics, including running periodic maintenance tasks.
 struct TopicManager {
+    topics: HashMap<TopicName, Topic>
+}
 
+impl TopicManager {
+    pub fn new() -> TopicManager {
+        let mut topics = HashMap::new();
+        // Load topics from disk.
+
+        TopicManager {
+            topics
+        }
+    }
 }
 
 /// LogQuery is a Rust representation of a log query. A log query has three primary parts:
@@ -28,12 +51,6 @@ struct TopicManager {
 /// 3) Options. This includes behavior such as a maximum number of messages to return.
 struct LogQuery;
 
-#[async_trait]
-trait Log {
-    async fn append(entries: Vec<LogEntry>) -> StorageResult<Offset>;
-    async fn read(query: LogQuery) -> Box<dyn Stream<Item = StorageResult<LogEntry>>>;
-    fn close();
-}
 
 /// Topic is the underlying structure which manages multiple LogSegments. As each segment
 /// becomes too large or has been open for too long, the Topic closes that segment and
@@ -45,28 +62,6 @@ struct Topic {
 
 #[async_trait]
 impl Log for Topic {
-    async fn append(entries: Vec<LogEntry>) -> StorageResult<Offset> {
-        unimplemented!()
-    }
-
-    async fn read(query: LogQuery) -> Box<dyn Stream<Item = StorageResult<LogEntry>>> {
-        unimplemented!()
-    }
-
-    fn close() {
-        unimplemented!()
-    }
-}
-
-/// LogSegment both manages the individual log files and their indices. For each append operation,
-/// LogSegment indexes the new messages (if necessary, not all index operations are required to
-/// index all messages) and
-struct LogSegment {
-
-}
-
-#[async_trait]
-impl Log for LogSegment {
     async fn append(entries: Vec<LogEntry>) -> StorageResult<Offset> {
         unimplemented!()
     }
