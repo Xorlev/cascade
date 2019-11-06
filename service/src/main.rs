@@ -1,15 +1,8 @@
 use std::collections::HashMap;
-use std::hash::{Hash, Hasher};
-use std::io::Read;
 use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
-use std::{io, thread};
 
-use futures::*;
-use futures_util::pin_mut;
-use tokio::prelude::*;
-use tokio::prelude::*;
 use tokio::sync::mpsc;
 use tonic::transport::Server;
 use tonic::{Code, Request, Response, Status, Streaming};
@@ -20,7 +13,7 @@ use slogd_proto::{
     ListTopicsResponse, LogEntry,
 };
 
-use crate::storage::{Log, LogQuery, StorageError, Topic, TopicManager, TopicName};
+use crate::storage::{Log, LogQuery, Topic, TopicManager, TopicName};
 
 mod storage;
 

@@ -4,7 +4,6 @@ use std::sync::Arc;
 
 use async_std::sync::RwLock;
 use failure::Fail;
-use futures::{Future, Stream};
 
 use async_trait::async_trait;
 pub use query::LogQuery;
