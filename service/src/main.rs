@@ -1,44 +1,46 @@
-use futures::{Stream, StreamExt};
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::io::Read;
 use std::pin::Pin;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::Instant;
 use std::{io, thread};
+
+use futures::*;
+use futures_util::pin_mut;
+use tokio::prelude::*;
+use tokio::prelude::*;
 use tokio::sync::mpsc;
 use tonic::transport::Server;
+use tonic::{Code, Request, Response, Status, Streaming};
 use tower_service::Service;
-
-use tonic::{Request, Response, Status, Streaming};
-
-mod storage;
-pub mod slogd_proto {
-    tonic::include_proto!("slogd");
-}
 
 use slogd_proto::{
     server, AppendRequest, AppendResponse, GetLogsRequest, GetLogsResponse, ListTopicsRequest,
-    ListTopicsResponse, LogEntry
+    ListTopicsResponse, LogEntry,
 };
 
-use futures::*;
-use tokio::prelude::*;
+use crate::storage::{Log, LogQuery, StorageError, Topic, TopicManager, TopicName};
 
-#[derive(Clone)]
-struct StructuredLogService {}
+mod storage;
+
+pub mod slogd_proto {
+    include!(concat!(env!("OUT_DIR"), concat!("/slogd.rs")));
+}
+
+struct StructuredLogService {
+    topic_manager: Arc<Mutex<TopicManager>>,
+}
 
 #[tonic::async_trait]
 impl server::StructuredLog for StructuredLogService {
-    type AppendLogsStreamStream = mpsc::Receiver<Result<AppendResponse, Status>>;
-    type GetLogsStreamStream = mpsc::Receiver<Result<LogEntry, Status>>;
-
     async fn append_logs(
         &self,
         request: Request<AppendRequest>,
     ) -> Result<Response<AppendResponse>, Status> {
         Err(Status::unimplemented("Not yet implemented"))
     }
+    type AppendLogsStreamStream = mpsc::Receiver<Result<AppendResponse, Status>>;
 
     async fn append_logs_stream(
         &self,
@@ -46,19 +48,41 @@ impl server::StructuredLog for StructuredLogService {
     ) -> Result<Response<Self::AppendLogsStreamStream>, Status> {
         Err(tonic::Status::unimplemented("Not yet implemented"))
     }
+
     async fn get_logs(
         &self,
         request: Request<GetLogsRequest>,
     ) -> Result<Response<GetLogsResponse>, Status> {
-        Ok(Response::new(GetLogsResponse {
-            logs: vec![]
-        }))
+        let request = request.into_inner();
+        let topic = {
+            let mut topic_manager = self.topic_manager.lock().unwrap();
+            topic_manager.topic(request.topic)
+        };
+
+        let logs = {
+            let read_locked_topic = topic.read().await;
+            read_locked_topic.read(LogQuery {}).await?
+        };
+
+        Ok(Response::new(GetLogsResponse { logs }))
     }
+    type GetLogsStreamStream = mpsc::Receiver<Result<LogEntry, Status>>;
     async fn get_logs_stream(
         &self,
         request: Request<GetLogsRequest>,
     ) -> Result<Response<Self::GetLogsStreamStream>, Status> {
-        Err(Status::unimplemented("Not yet implemented"))
+        let response = self.get_logs(request).await?;
+
+        // Until we have a cursor implementation, this just delegates to get_logs and ends the
+        // stream.
+        let (mut tx, rx) = mpsc::channel(4);
+        tokio::spawn(async move {
+            for log in response.into_inner().logs {
+                tx.send(Ok(log)).await.unwrap();
+            }
+        });
+
+        Ok(Response::new(rx))
     }
     async fn list_topics(
         &self,
@@ -76,15 +100,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Listening on: {}", addr);
 
-    let structured_log_service = StructuredLogService {};
+    let structured_log_service = StructuredLogService {
+        topic_manager: Arc::new(Mutex::new(TopicManager::new())),
+    };
     let svc = server::StructuredLogServer::new(structured_log_service);
 
     let mut builder = Server::builder();
     builder.interceptor_fn(|svc, req| {
-            println!("request={:?}", req);
-            svc.call(req)
-        });
-    builder.serve(addr, svc).await?;
+        println!("request={:?}", req);
+        svc.call(req)
+    });
+    builder.add_service(svc).serve(addr).await?;
 
     Ok(())
+}
+
+impl From<storage::StorageError> for Status {
+    fn from(_: StorageError) -> Self {
+        Status::new(Code::Unknown, "Status mapping unimplemented.")
+    }
 }

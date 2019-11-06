@@ -7,6 +7,7 @@ edition = "2018"
 [dependencies]
 async-stream = "0.1.2"
 async-trait = "0.1"
+async-std = "0.99.11"
 bytes = "0.4"
 chrono = { version = "0.4" }
 clap = "~2.31"
@@ -14,6 +15,7 @@ env_logger = "0.5"
 failure = "0.1"
 failure_derive = "0.1"
 futures-preview = { version = "=0.3.0-alpha.19", default-features = false, features = ["alloc"]}
+futures-util-preview = "0.3.0-alpha.19"
 http = "0.1"
 log = "0.3"
 prost = "0.5"
