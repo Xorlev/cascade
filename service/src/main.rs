@@ -1,7 +1,4 @@
-use std::collections::HashMap;
-use std::pin::Pin;
-use std::sync::{Arc, Mutex};
-use std::time::Instant;
+use std::sync::Arc;
 
 use tokio::sync::mpsc;
 use tonic::transport::Server;
@@ -13,7 +10,8 @@ use slogd_proto::{
     ListTopicsResponse, LogEntry,
 };
 
-use crate::storage::{Log, LogQuery, Topic, TopicManager, TopicName};
+use crate::storage::{Log, LogQuery, TopicManager, StorageError};
+use async_std::sync::Mutex;
 
 mod storage;
 
@@ -48,8 +46,8 @@ impl server::StructuredLog for StructuredLogService {
     ) -> Result<Response<GetLogsResponse>, Status> {
         let request = request.into_inner();
         let topic = {
-            let mut topic_manager = self.topic_manager.lock().unwrap();
-            topic_manager.topic(request.topic)
+            let mut topic_manager = self.topic_manager.lock().await;
+            topic_manager.topic(request.topic).await?
         };
 
         let logs = {
@@ -108,8 +106,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-impl From<storage::StorageError> for Status {
-    fn from(_: StorageError) -> Self {
-        Status::new(Code::Unknown, "Status mapping unimplemented.")
+impl From<StorageError> for Status {
+    fn from(err: StorageError) -> Self {
+        match err {
+            StorageError::IoError(e) => Status::new(Code::Internal, e.to_string()),
+            _ => Status::new(Code::Unknown, "Status mapping unimplemented."),
+        }
     }
 }

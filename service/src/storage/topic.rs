@@ -1,6 +1,6 @@
 use crate::slogd_proto::LogEntry;
 use crate::storage::segment::Segment;
-use crate::storage::{Log, LogQuery, Offset, StorageError, StorageResult, TopicName};
+use crate::storage::{Log, LogQuery, Offset, StorageResult, TopicName};
 use async_trait::async_trait;
 
 /// Topic is the underlying structure which manages multiple LogSegments. As each segment
@@ -13,10 +13,13 @@ pub struct Topic {
 }
 
 impl Topic {
-    pub fn create(topic_name: TopicName) -> Topic {
-        Topic {
-            segment: Segment {},
-        }
+    pub async fn create(topic_name: TopicName) -> StorageResult<Topic> {
+        let base_path = format!("data/{}", topic_name);
+        let open1 = Segment::open(base_path, 0).await?;
+
+        Ok(Topic {
+            segment: open1,
+        })
     }
 }
 

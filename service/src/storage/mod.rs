@@ -1,4 +1,3 @@
-use core::pin::Pin;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -10,7 +9,9 @@ pub use query::LogQuery;
 pub use topic::Topic;
 
 use crate::slogd_proto::LogEntry;
+use std::collections::hash_map::Entry;
 
+mod file;
 mod index;
 mod query;
 mod segment;
@@ -18,8 +19,10 @@ mod topic;
 
 #[derive(Debug, Fail)]
 pub enum StorageError {
-    #[fail(display = "An unknown error occurred.")]
+    #[fail(display = "an unknown error occurred.")]
     UnknownError,
+    #[fail(display = "io error: {}", _0)]
+    IoError(std::io::Error),
 }
 
 pub type Offset = u64;
@@ -47,10 +50,13 @@ impl TopicManager {
         TopicManager { topics }
     }
 
-    pub fn topic(&mut self, topic_name: TopicName) -> Arc<RwLock<Topic>> {
-        self.topics
-            .entry(topic_name.clone())
-            .or_insert_with(|| Arc::new(RwLock::new(Topic::create(topic_name))))
-            .clone()
+    pub async fn topic(&mut self, topic_name: TopicName) -> StorageResult<Arc<RwLock<Topic>>> {
+        match self.topics.entry(topic_name.clone()) {
+            Entry::Occupied(v) => Ok(v.get().clone()),
+            Entry::Vacant(_) => {
+                let topic = Topic::create(topic_name).await?;
+                Ok(Arc::new(RwLock::new(topic)))
+            },
+        }
     }
 }
