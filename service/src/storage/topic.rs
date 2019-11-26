@@ -17,9 +17,7 @@ impl Topic {
         let base_path = format!("data/{}", topic_name);
         let open1 = Segment::open(base_path, 0).await?;
 
-        Ok(Topic {
-            segment: open1,
-        })
+        Ok(Topic { segment: open1 })
     }
 }
 

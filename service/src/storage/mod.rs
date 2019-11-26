@@ -50,13 +50,20 @@ impl TopicManager {
         TopicManager { topics }
     }
 
-    pub async fn topic(&mut self, topic_name: TopicName) -> StorageResult<Arc<RwLock<Topic>>> {
+    pub fn topic(&self, topic_name: &TopicName) -> Option<Arc<RwLock<Topic>>> {
+        self.topics.get(topic_name).cloned()
+    }
+
+    pub async fn topic_or_create(
+        &mut self,
+        topic_name: TopicName,
+    ) -> StorageResult<Arc<RwLock<Topic>>> {
         match self.topics.entry(topic_name.clone()) {
             Entry::Occupied(v) => Ok(v.get().clone()),
             Entry::Vacant(_) => {
                 let topic = Topic::create(topic_name).await?;
                 Ok(Arc::new(RwLock::new(topic)))
-            },
+            }
         }
     }
 }

@@ -10,8 +10,8 @@ use slogd_proto::{
     ListTopicsResponse, LogEntry,
 };
 
-use crate::storage::{Log, LogQuery, TopicManager, StorageError};
-use async_std::sync::Mutex;
+use crate::storage::{Log, LogQuery, StorageError, Topic, TopicManager, TopicName};
+use async_std::sync::{Mutex, RwLock};
 
 mod storage;
 
@@ -20,7 +20,7 @@ pub mod slogd_proto {
 }
 
 struct StructuredLogService {
-    topic_manager: Arc<Mutex<TopicManager>>,
+    topic_manager: Arc<RwLock<TopicManager>>,
 }
 
 #[tonic::async_trait]
@@ -37,7 +37,7 @@ impl server::StructuredLog for StructuredLogService {
         &self,
         request: Request<Streaming<AppendRequest>>,
     ) -> Result<Response<Self::AppendLogsStreamStream>, Status> {
-        Err(tonic::Status::unimplemented("Not yet implemented"))
+        Err(Status::unimplemented("Not yet implemented"))
     }
 
     async fn get_logs(
@@ -45,14 +45,11 @@ impl server::StructuredLog for StructuredLogService {
         request: Request<GetLogsRequest>,
     ) -> Result<Response<GetLogsResponse>, Status> {
         let request = request.into_inner();
-        let topic = {
-            let mut topic_manager = self.topic_manager.lock().await;
-            topic_manager.topic(request.topic).await?
-        };
+        let topic = self.get_topic(&request.topic).await?;
 
         let logs = {
             let read_locked_topic = topic.read().await;
-            read_locked_topic.read(LogQuery {}).await?
+            read_locked_topic.read(LogQuery::builder().build()).await?
         };
 
         Ok(Response::new(GetLogsResponse { logs }))
@@ -92,7 +89,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Listening on: {}", addr);
 
     let structured_log_service = StructuredLogService {
-        topic_manager: Arc::new(Mutex::new(TopicManager::new())),
+        topic_manager: Arc::new(RwLock::new(TopicManager::new())),
     };
     let svc = server::StructuredLogServer::new(structured_log_service);
 
@@ -112,5 +109,13 @@ impl From<StorageError> for Status {
             StorageError::IoError(e) => Status::new(Code::Internal, e.to_string()),
             _ => Status::new(Code::Unknown, "Status mapping unimplemented."),
         }
+    }
+}
+
+impl StructuredLogService {
+    async fn get_topic(&self, topic: &TopicName) -> Result<Arc<RwLock<Topic>>, Status> {
+        self.topic_manager.read().await
+            .topic(topic)
+            .ok_or_else(|| Status::new(Code::NotFound, format!("Topic '{}' not found.", topic)))
     }
 }

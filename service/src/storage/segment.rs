@@ -4,48 +4,46 @@ use async_std::path::{Path, PathBuf};
 use async_trait::async_trait;
 
 use crate::slogd_proto::LogEntry;
+use crate::storage::file::LogFile;
 use crate::storage::{Log, LogQuery, Offset, StorageError, StorageResult};
 use async_std::prelude::*;
-use tokio::io::Error;
-use std::io;
+use async_std::sync::Arc;
 use async_std::task::spawn_blocking;
-use std::fs::File;
-use std::os::unix::fs::FileExt;
-use async_std::sync::{Arc};
-use std::sync::RwLock;
-use std::io::BufReader;
-use crate::storage::file::LogFile;
 use byteorder::{BigEndian, ReadBytesExt};
+use std::fs::File;
+use std::io;
+use std::io::BufReader;
 use std::io::Cursor;
-
-
+use std::os::unix::fs::FileExt;
+use std::sync::RwLock;
+use tokio::io::Error;
 
 /// LogSegment both manages the individual log files and their indices. For each append operation,
 /// LogSegment indexes the new messages (if necessary, not all index operations are required to
 /// index all messages) and writes the new message to the end of the log.
 pub struct Segment {
-    log: LogFile
+    log: LogFile,
 }
 
 impl Segment {
-    pub async fn open<P: AsRef<Path>> (base_path: P, start_offset: Offset) -> StorageResult<Segment> {
+    pub async fn open<P: AsRef<Path>>(
+        base_path: P,
+        start_offset: Offset,
+    ) -> StorageResult<Segment> {
         let mut path = PathBuf::new();
         path.push(base_path);
         path.push(format!("{}.log", start_offset));
         println!("Opening segment: {:?}", path.as_path());
         let log = LogFile::open(path).await?;
 
-        Ok(Segment {
-            log
-        })
+        Ok(Segment { log })
     }
 }
 
 #[async_trait]
 impl Log for Segment {
     async fn append(&mut self, entries: Vec<LogEntry>) -> StorageResult<u64> {
-//        self.f.write(&[]).await?
-
+        //        self.f.write(&[]).await?
 
         unimplemented!()
     }
@@ -55,9 +53,11 @@ impl Log for Segment {
         self.log.read_at(&mut buf, 0).await?;
         let mut cursor = Cursor::new(buf);
 
-
-        println!("Next msg size: {:?}", cursor.read_u64::<BigEndian>().unwrap());
-//        println!("Read {} bytes: {:?}", read_bytes, contents);
+        println!(
+            "Next msg size: {:?}",
+            cursor.read_u64::<BigEndian>().unwrap()
+        );
+        //        println!("Read {} bytes: {:?}", read_bytes, contents);
 
         let mut logs = Vec::new();
         logs.push(LogEntry {
