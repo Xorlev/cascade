@@ -1,10 +1,9 @@
 use crate::storage::StorageResult;
-use async_std::path::PathBuf;
+use async_std::path::{PathBuf, Path};
 use async_std::task::spawn_blocking;
 use buffered_offset_reader::{BufOffsetReader, OffsetRead, OffsetReadMut};
 use std::fs::File;
 use std::io::BufRead;
-use std::path::Path;
 use std::sync::{Arc, RwLock};
 use tokio::io::Error;
 
@@ -14,7 +13,8 @@ pub struct LogFile {
 
 impl LogFile {
     pub async fn open<P: AsRef<Path>>(path: P) -> StorageResult<LogFile> {
-        let path = path.as_ref().to_owned();
+        let path = path.as_ref().to_owned().into_os_string();
+
         let f = spawn_blocking(move || File::open(path)).await?;
 
         Ok(LogFile {

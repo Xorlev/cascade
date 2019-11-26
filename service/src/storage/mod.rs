@@ -9,6 +9,9 @@ pub use query::LogQuery;
 pub use topic::Topic;
 
 use crate::slogd_proto::LogEntry;
+use async_std::fs::{DirEntry, ReadDir};
+use async_std::path::PathBuf;
+use futures::StreamExt;
 use std::collections::hash_map::Entry;
 
 mod file;
@@ -39,15 +42,27 @@ pub trait Log {
 
 /// LogManager maintains topics, including running periodic maintenance tasks.
 pub struct TopicManager {
+    base_path: PathBuf,
     topics: HashMap<TopicName, Arc<RwLock<Topic>>>,
 }
 
 impl TopicManager {
-    pub fn new() -> TopicManager {
+    pub async fn new() -> StorageResult<TopicManager> {
         let mut topics = HashMap::new();
-        // Load topics from disk.
 
-        TopicManager { topics }
+        // Load topics from disk.
+        let mut dir: ReadDir = async_std::fs::read_dir("data").await?;
+        while let Some(value) = dir.next().await {
+            let dir_entry: DirEntry = value?;
+            let dir_name: String = dir_entry.file_name().to_string_lossy().to_string();
+            let topic = Topic::create(&dir_entry.path()).await?;
+            topics.insert(dir_name, Arc::new(RwLock::new(topic)));
+        }
+
+        Ok(TopicManager {
+            base_path: PathBuf::from("data"),
+            topics,
+        })
     }
 
     pub fn topic(&self, topic_name: &TopicName) -> Option<Arc<RwLock<Topic>>> {
@@ -61,7 +76,9 @@ impl TopicManager {
         match self.topics.entry(topic_name.clone()) {
             Entry::Occupied(v) => Ok(v.get().clone()),
             Entry::Vacant(_) => {
-                let topic = Topic::create(topic_name).await?;
+                let mut topic_path = self.base_path.to_path_buf();
+                topic_path.push(topic_name);
+                let topic = Topic::create(&topic_path).await?;
                 Ok(Arc::new(RwLock::new(topic)))
             }
         }

@@ -1,5 +1,5 @@
+use failure::Fail;
 use std::sync::Arc;
-
 use tokio::sync::mpsc;
 use tonic::transport::Server;
 use tonic::{Code, Request, Response, Status, Streaming};
@@ -87,9 +87,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr = "127.0.0.1:10000".parse().unwrap();
 
     println!("Listening on: {}", addr);
+    let tm = TopicManager::new().await.map_err(|e| e.compat())?;
 
     let structured_log_service = StructuredLogService {
-        topic_manager: Arc::new(RwLock::new(TopicManager::new())),
+        topic_manager: Arc::new(RwLock::new(tm)),
     };
     let svc = server::StructuredLogServer::new(structured_log_service);
 
@@ -114,7 +115,9 @@ impl From<StorageError> for Status {
 
 impl StructuredLogService {
     async fn get_topic(&self, topic: &TopicName) -> Result<Arc<RwLock<Topic>>, Status> {
-        self.topic_manager.read().await
+        self.topic_manager
+            .read()
+            .await
             .topic(topic)
             .ok_or_else(|| Status::new(Code::NotFound, format!("Topic '{}' not found.", topic)))
     }

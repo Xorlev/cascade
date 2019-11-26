@@ -30,11 +30,8 @@ impl Segment {
         base_path: P,
         start_offset: Offset,
     ) -> StorageResult<Segment> {
-        let mut path = PathBuf::new();
-        path.push(base_path);
-        path.push(format!("{}.log", start_offset));
-        println!("Opening segment: {:?}", path.as_path());
-        let log = LogFile::open(path).await?;
+//        println!("Opening segment: {:?}", base_path.as_path());
+        let log = LogFile::open(base_path).await?;
 
         Ok(Segment { log })
     }
