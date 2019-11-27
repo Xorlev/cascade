@@ -1,5 +1,5 @@
 use crate::storage::StorageResult;
-use async_std::path::{PathBuf, Path};
+use async_std::path::{Path, PathBuf};
 use async_std::task::spawn_blocking;
 use buffered_offset_reader::{BufOffsetReader, OffsetRead, OffsetReadMut};
 use std::fs::File;
@@ -24,11 +24,10 @@ impl LogFile {
 
     pub async fn read_at(&self, buf: &mut [u8], offset: u64) -> StorageResult<usize> {
         let file = self.inner.clone();
-        let (contents, read_bytes): ([u8; 8], usize) = spawn_blocking(move || {
-            let mut buf = [0u8; 8];
+        let read_bytes: usize = spawn_blocking(move || {
             let f = file.read().unwrap();
             let read_bytes: usize = f.read_at(&mut buf, offset).unwrap();
-            (buf, read_bytes)
+            read_bytes
         })
         .await;
 

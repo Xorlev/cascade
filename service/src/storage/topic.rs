@@ -27,7 +27,12 @@ impl Topic {
             let filename: String = dir_entry.file_name().to_string_lossy().to_string();
 
             if filename.ends_with(".log") {
-                let start_offset = filename.split(".").next().unwrap().parse::<u64>().unwrap();
+                let start_offset = filename
+                    .split(".")
+                    .next()
+                    .unwrap()
+                    .parse::<Offset>()
+                    .unwrap();
 
                 let segment = Segment::open(dir_entry.path(), start_offset).await?;
                 segments.insert(start_offset, segment);

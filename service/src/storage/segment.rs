@@ -22,6 +22,7 @@ use tokio::io::Error;
 /// LogSegment indexes the new messages (if necessary, not all index operations are required to
 /// index all messages) and writes the new message to the end of the log.
 pub struct Segment {
+    base_path: PathBuf,
     log: LogFile,
 }
 
@@ -30,10 +31,11 @@ impl Segment {
         base_path: P,
         start_offset: Offset,
     ) -> StorageResult<Segment> {
-//        println!("Opening segment: {:?}", base_path.as_path());
+        let path = base_path.as_ref().to_path_buf();
+        println!("Opening segment: {:?}", path);
         let log = LogFile::open(base_path).await?;
 
-        Ok(Segment { log })
+        Ok(Segment { base_path: path, log })
     }
 }
 
