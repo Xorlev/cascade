@@ -18,7 +18,7 @@ futures-preview = { version = "=0.3.0-alpha.19", default-features = false, featu
 futures-util-preview = "0.3.0-alpha.19"
 http = "0.1"
 log = "0.3"
-prost = "0.5"
+prost = "0.6"
 prost-types = "0.5"
 #slogd-shared = { path = "../slogd-shared" }
 tokio = "=1.18.5"

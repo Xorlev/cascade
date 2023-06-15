@@ -591,7 +591,7 @@ dependencies = [
  "net2",
  "pin-project",
  "time",
- "tokio",
+ "tokio 0.2.0-alpha.6",
  "tokio-executor",
  "tokio-io",
  "tokio-net",
@@ -1275,9 +1275,9 @@ dependencies = [
  "futures-util-preview",
  "http",
  "log 0.3.9",
- "prost 0.5.0",
+ "prost 0.6.1",
  "prost-types 0.5.0",
- "tokio",
+ "tokio 1.18.5",
  "tonic",
  "tonic-build",
  "tower",
@@ -1413,20 +1413,26 @@ version = "0.2.0-alpha.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f17f5d6ab0f35c1506678b28fb1798bdf74fcb737e9843c7b17b73e426eba38"
 dependencies = [
- "bytes 0.4.12",
  "futures-core-preview",
  "futures-sink-preview",
  "futures-util-preview",
  "num_cpus",
- "tokio-codec",
  "tokio-executor",
- "tokio-fs",
  "tokio-io",
  "tokio-macros",
  "tokio-net",
  "tokio-sync",
  "tokio-timer",
  "tracing-core",
+]
+
+[[package]]
+name = "tokio"
+version = "1.18.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0e050c618355082ae5a89ec63bbf897225d5ffe84c7c4e036874e4d185a5044e"
+dependencies = [
+ "pin-project-lite 0.2.9",
 ]
 
 [[package]]
@@ -1459,20 +1465,6 @@ dependencies = [
  "slab",
  "tokio-sync",
  "tracing",
-]
-
-[[package]]
-name = "tokio-fs"
-version = "0.2.0-alpha.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0bf85e16971e06e680c622e0c1b455be94b086275c5ddcd6d4a83a2bfbb83cda"
-dependencies = [
- "futures-core-preview",
- "futures-util-preview",
- "lazy_static",
- "tokio-executor",
- "tokio-io",
- "tokio-sync",
 ]
 
 [[package]]
@@ -1569,7 +1561,7 @@ dependencies = [
  "pin-project",
  "prost 0.5.0",
  "prost-derive 0.5.0",
- "tokio",
+ "tokio 0.2.0-alpha.6",
  "tokio-codec",
  "tower",
  "tower-balance",
